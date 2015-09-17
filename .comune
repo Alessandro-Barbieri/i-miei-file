@@ -1,0 +1,120 @@
+extract () {
+   if [ -f "$1" ] ; then
+       case "$1" in
+	   *.tar|*.tar.lzma|*.tar.Z|*.taz|*.tbz|*.taZ)						tar xvf 	"$1"    ;;
+       *.tar.gz|*.tgz)  												pigz -ckd 	 	"$1" | tar xvf - ;;   
+	   *.tar.bz2|*.tbz2|*.tb2|*.tz2)									lbunzip2 -ckd 	"$1" | tar xvf - ;;
+	   *.txz|*.tar.xz|*.tar.pxz)										pixz -d			"$1" | tar xvf - ;;
+	   *.tlz|*.tar.lz)                                                  plzip -cdk		"$1" | tar xvf - ;;
+	   *.tar.bz)														bunzip -ck		"$1" | tar xvf - ;;
+	   *.lz)                                                            plzip -dk   "$1"    ;;
+	   *.bz2)                                   						lbunzip2 -k	"$1"    ;;
+	   *.gz)                                    						pigz -dk	"$1"    ;;
+	   *.lzo|*.lzop)												    lzop -d		"$1"    ;;      
+	   *.xz|*.pxz)														pixz -d   	"$1"    ;;
+	   *.lzma)															unlzma	-k	"$1"    ;;		       
+       *.zip|*.jar|*.war)                       						unzip		"$1"    ;;
+	   *.rar)                                   						unrar x 	"$1"    ;;
+       *.Z)                                     						uncompress k"$1"	;;
+       *.7z|*.apm|*.chm|*.cpio|*.cramFS|*.deb|*.dmg|*.fat|*.hfs|*.iso|*.mbr|*.msi|*.mslz|*.msis|*.ntfs|*.rpm|*.SquashFS|*.udf|*.vhd|*.wim|*.xar)                                    			7z x		"$1"    ;;
+	   *.cab|*.CAB)														cabextract	"$1"    ;;
+	   *.bz)															bunzip -k	"$1"    ;;
+       *.zoo)                                                           zoo x       "$1"    ;;
+       *.arj)                                                           arj e       "$1"    ;;
+       *.lzh|*.lzs|*.pma)                                               lhasa e     "$1"    ;;
+       *.ace)                                                           unace e     "$1"    ;;
+	   *.rz)															rzip -dk 	"$1"    ;;
+	   *.lrz)															lrzip -d	"$1"    ;;
+	   *.alz|*.shar|*.adf|*.ace|*.a|*.arc|*.dms|*.flac|*.lha|*shn)		patool extract "$1"    ;;
+       *)                                       						unar		"$1"    ;;
+       esac
+   else
+       echo "'$1' is not a valid file!"
+   fi
+ }
+
+export GOPATH=~/src/go
+export PATH=$GOPATH:$GOPATH/bin:$PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/opt/lib
+export PATH=$PATH:/opt/bin:/usr/local/bin
+
+#function deframmenta {
+#	sudo nice -n 17 ionice -c 3 e4defrag -v "$1" | tail -n +2 | head -n -4 | sed -e 's/\[[^][]*\]//g' |  sed '/-> 1/d' | cut -d ':' -f1
+#}
+
+function converti {
+nice -n 8 ffmpeg 	-y \
+					-hwaccel auto \
+					-i "$1" \
+					-vf setsar=1/1,yadif `#,deshake=opencl=1,unsharp=opencl=1` \
+					-r 25 \
+					-g 25 \
+					-c:v libx264 \
+					-preset veryslow \
+					-profile:v high \
+					-tune animation \
+					-b:v 2507k \
+					-minrate 2M \
+					-maxrate 4M \
+					-bufsize 8M \
+					-movflags +faststart \
+					-pix_fmt yuv420p \
+					-pass 1 \
+					-c:a libfdk_aac \
+					-b:a 256k \
+					-ar 44100 \
+					-f mp4 /dev/null &&	\
+					ffmpeg -y \
+					-hwaccel auto \
+					-i "$1" \
+					-vf setsar=1/1,yadif `#,deshake=opencl=1,unsharp=opencl=1` \
+					-g 25 \
+					-r 25 \
+					-c:v libx264 \
+					-preset veryslow \
+					-profile:v high \
+					-tune animation \
+					-b:v 2507k \
+					-minrate 2M \
+					-maxrate 4M \
+					-bufsize 8M \
+					-movflags +faststart \
+					-pix_fmt yuv420p \
+					-pass 2 \
+					-c:a libfdk_aac \
+					-ar 44100 \
+					-b:a 256k "$1".mp4 
+rm -rfv  ./ffmpeg2pass*
+}
+
+alias sudo='nocorrect sudo'
+alias pulisci='sudo bash -c "apt-get autoremove; aptitude -y purge '~c'; aptitude autoclean; aptitude clean;"'
+alias aggiorna='sudo bash -c "aptitude update; apt-file update; aptitude upgrade;"'
+alias swap='sudo ~/.swap.sh | sort -nk3'
+alias registra="nice -n 8 ffmpeg  -f x11grab \
+						-s $(xwininfo -root | grep 'geometry' |awk 'match($0, /[0-9]+x[0-9]+/) { print substr($0, RSTART, RLENGTH)}') \
+						-framerate 30 \
+						-i :0.0 \
+						-f alsa \
+						-ac 2 \
+						-i pulse \
+						-acodec pcm_s16le \
+						-c:v libx264 \
+						-qp 0 \
+						-preset ultrafast \
+						-tune zerolatency \
+						-profile:v high444 \
+						/home/ale/$(date +%Y-%m-%d_%H:%M:%S).mkv"
+
+export MAKE='make -j8'
+export SAGE_DEBUG=nonso
+export SAGE_PROFILE=yes
+export SAGE_INSTALL_CCACHE=yes
+export SAGE_TUNE_pari=yes
+export CFLAGS="${CFLAGS} -march=native -tune=native"
+export CXXFLAGS="${CXXFLAGS} -march=native -tune=native"
+export FCFLAGS="${FCFLAGS} -march=native -tune=native"
+
+archey
+
+fortune
